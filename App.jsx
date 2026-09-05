@@ -3,11 +3,9 @@ import * as THREE from 'three'
 import './App.scss'
 
 const services = [
-  { number: '01', title: 'Strategic Consulting', description: 'Transform your digital vision into actionable strategies that drive measurable business results and competitive advantage.', tag: 'Strategy / Analysis' },
-  { number: '02', title: 'Brand Identity Design', description: 'Create distinctive brand systems that resonate with your audience and establish lasting market presence across all touchpoints.', tag: 'Branding / Design' },
-  { number: '03', title: 'Web Development', description: 'Build fast, scalable, and secure digital products that deliver exceptional user experiences and business value.', tag: 'Development / Tech' },
-  { number: '04', title: 'Digital Marketing', description: 'Amplify your reach with data-driven marketing campaigns that convert prospects into loyal customers and drive growth.', tag: 'Marketing / Analytics' },
-  { number: '05', title: 'Innovation Workshops', description: 'Collaborate with our team to identify opportunities, solve complex challenges, and accelerate your digital transformation journey.', tag: 'Training / Strategy' },
+  { number: '01', title: 'Web Development', shortTitle: 'Web', tag: 'Build / Scale', problem: 'Slow, fragmented digital experiences make it difficult to earn trust and convert interest.', solution: 'We design and engineer fast, responsive websites and platforms around your customers, content, and operational needs.', benefit: 'A dependable digital foundation that performs beautifully and grows with the business.', accent: 'cyan' },
+  { number: '02', title: 'AI & Automation', shortTitle: 'AI', tag: 'Connect / Automate', problem: 'Repetitive work and disconnected data keep teams busy instead of moving the business forward.', solution: 'We connect intelligent workflows, practical AI, and automation to remove friction from the work that matters most.', benefit: 'Faster decisions, less manual effort, and more capacity for high-value work.', accent: 'green' },
+  { number: '03', title: 'UI/UX Design', shortTitle: 'Design', tag: 'Clarify / Delight', problem: 'When products feel confusing, valuable ideas are lost before users reach the outcome.', solution: 'We turn complex journeys into clear, accessible interfaces through research, prototyping, and purposeful visual systems.', benefit: 'Confident users, stronger adoption, and experiences people remember for the right reasons.', accent: 'blue' },
 ]
 
 const brandLetters = 'Virexo'.split('')
@@ -50,7 +48,63 @@ function ChatAssistant() {
   return <><button className="chat-launcher" type="button" onClick={() => setOpen((isOpen) => !isOpen)} aria-label={open ? 'Close AI assistant' : 'Open AI assistant'} aria-expanded={open}>AI</button>{open && <aside className="chat-panel" aria-label="Virexo AI assistant"><div className="chat-header"><div><strong>Virexo AI</strong><span>Project assistant</span></div><button type="button" onClick={() => setOpen(false)} aria-label="Close AI assistant">×</button></div><div className="chat-messages" aria-live="polite">{messages.map((message, index) => <p className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>{message.content}</p>)}{loading && <p className="chat-message assistant">Thinking...</p>}</div>{error && <p className="chat-error" role="alert">{error}</p>}<form className="chat-form" onSubmit={handleSubmit}><label className="sr-only" htmlFor="chat-message">Ask Virexo AI</label><input id="chat-message" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about your project" maxLength="1000" disabled={loading} /><button type="submit" disabled={loading || !input.trim()} aria-label="Send message">↑</button></form></aside>}</>
 }
 
-  function AnalyticsDashboard() {
+function ServiceShowcase() {
+  const [activeService, setActiveService] = useState(services[0].number)
+  const selectedService = services.find((service) => service.number === activeService) || services[0]
+
+  return <section className="services-section service-showcase reveal" id="services" aria-labelledby="services-title">
+    <div className="section-heading"><p className="section-index">02 / Our services</p><h2 id="services-title">Digital work with<br /><em>a clear outcome.</em></h2><p className="section-lede">Three focused capabilities for turning ambitious ideas into useful, measurable digital experiences.</p></div>
+    <div className="service-tabs-shell">
+      <div className="service-tabs" role="tablist" aria-label="Virexo services">{services.map((service) => <button className={`service-tab${activeService === service.number ? ' is-active' : ''}`} key={service.number} type="button" role="tab" aria-selected={activeService === service.number} aria-controls={`service-panel-${service.number}`} id={`service-tab-${service.number}`} tabIndex={activeService === service.number ? 0 : -1} onClick={() => setActiveService(service.number)} onKeyDown={(event) => { const index = services.findIndex((item) => item.number === activeService); const nextIndex = event.key === 'ArrowRight' ? (index + 1) % services.length : event.key === 'ArrowLeft' ? (index - 1 + services.length) % services.length : index; if (nextIndex !== index) { event.preventDefault(); setActiveService(services[nextIndex].number); document.getElementById(`service-tab-${services[nextIndex].number}`)?.focus() } }}>{service.number}<span>{service.shortTitle}</span></button>)}</div>
+      <article className={`service-detail service-detail-${selectedService.accent}`} role="tabpanel" id={`service-panel-${selectedService.number}`} aria-labelledby={`service-tab-${selectedService.number}`} key={selectedService.number}>
+        <div className="service-detail-header"><span className="service-kicker">{selectedService.tag}</span><span className="service-detail-index">{selectedService.number} / 03</span></div>
+        <h3>{selectedService.title}</h3>
+        <div className="service-detail-grid"><div><span>Problem</span><p>{selectedService.problem}</p></div><div><span>Solution</span><p>{selectedService.solution}</p></div><div><span>Benefit</span><p>{selectedService.benefit}</p></div></div>
+        <a className="service-detail-link" href="#contact">Discuss this service <span aria-hidden="true">&#8599;</span></a>
+      </article>
+    </div>
+  </section>
+}
+
+function EnquiryForm() {
+  const initialValues = { name: '', email: '', service: '', message: '' }
+  const [values, setValues] = useState(initialValues)
+  const [errors, setErrors] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+
+  const validateField = (name, value) => {
+    if (!value.trim()) return `${name === 'service' ? 'Please choose a service.' : `${name[0].toUpperCase()}${name.slice(1)} is required.`}`
+    if (name === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.'
+    return ''
+  }
+
+  const updateField = (event) => {
+    const { name, value } = event.target
+    setValues((current) => ({ ...current, [name]: value }))
+    setErrors((current) => ({ ...current, [name]: validateField(name, value) }))
+    setSubmitted(false)
+  }
+
+  const submit = (event) => {
+    event.preventDefault()
+    const nextErrors = Object.fromEntries(Object.entries(values).map(([name, value]) => [name, validateField(name, value)]))
+    setErrors(nextErrors)
+    if (Object.values(nextErrors).some(Boolean)) return
+    setSubmitted(true)
+    setValues(initialValues)
+  }
+
+  if (submitted) return <div className="contact-form form-success" role="status" aria-live="polite"><span className="success-icon" aria-hidden="true">&#10003;</span><h3>Thanks, we have your enquiry.</h3><p>We will review your project details and reply within one business day.</p><button className="text-link" type="button" onClick={() => setSubmitted(false)}>Send another enquiry <span aria-hidden="true">&#8599;</span></button></div>
+
+  return <form className="contact-form enquiry-form" onSubmit={submit} noValidate>
+    <div className="enquiry-form-grid"><div className="field-group"><label htmlFor="enquiry-name">Full name</label><input id="enquiry-name" name="name" value={values.name} onChange={updateField} autoComplete="name" placeholder="Your full name" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'enquiry-name-error' : undefined} />{errors.name && <small id="enquiry-name-error" className="field-error" role="alert">{errors.name}</small>}</div><div className="field-group"><label htmlFor="enquiry-email">Email address</label><input id="enquiry-email" name="email" type="email" value={values.email} onChange={updateField} autoComplete="email" placeholder="you@company.com" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'enquiry-email-error' : undefined} />{errors.email && <small id="enquiry-email-error" className="field-error" role="alert">{errors.email}</small>}</div></div>
+    <div className="field-group"><label htmlFor="enquiry-service">Service of interest</label><select id="enquiry-service" name="service" value={values.service} onChange={updateField} aria-invalid={Boolean(errors.service)} aria-describedby={errors.service ? 'enquiry-service-error' : undefined}><option value="">Select a service</option>{services.map((service) => <option key={service.number} value={service.title}>{service.title}</option>)}</select>{errors.service && <small id="enquiry-service-error" className="field-error" role="alert">{errors.service}</small>}</div>
+    <div className="field-group"><label htmlFor="enquiry-message">Message</label><textarea id="enquiry-message" name="message" value={values.message} onChange={updateField} placeholder="Tell us what you are building..." rows="5" aria-invalid={Boolean(errors.message)} aria-describedby={errors.message ? 'enquiry-message-error' : undefined} />{errors.message && <small id="enquiry-message-error" className="field-error" role="alert">{errors.message}</small>}</div>
+    <button className="contact-button" type="submit">Request information <span aria-hidden="true">&#8599;</span></button>
+  </form>
+}
+
+function AnalyticsDashboard() {
     const [analytics, setAnalytics] = useState(null)
 
     useEffect(() => {
@@ -331,7 +385,7 @@ function App() {
   const heroArtRef = useRef(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => window.localStorage.getItem('virexo-theme') === 'dark')
-  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [activeSection, setActiveSection] = useState('top')
 
   useEffect(() => {
     document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
@@ -350,6 +404,16 @@ function App() {
     }, { threshold: 0.14 })
 
     revealItems.forEach((item) => observer.observe(item))
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const sections = ['top', 'about', 'services', 'careers', 'contact'].map((id) => document.getElementById(id)).filter(Boolean)
+    const observer = new IntersectionObserver((entries) => {
+      const visibleSection = entries.filter((entry) => entry.isIntersecting).sort((entryA, entryB) => entryB.intersectionRatio - entryA.intersectionRatio)[0]
+      if (visibleSection) setActiveSection(visibleSection.target.id)
+    }, { rootMargin: '-18% 0px -62% 0px', threshold: [0.15, 0.4, 0.7] })
+    sections.forEach((section) => observer.observe(section))
     return () => observer.disconnect()
   }, [])
 
@@ -387,7 +451,7 @@ function App() {
     <div className="site-shell">
       <header className={`nav-wrap${menuOpen ? ' menu-open' : ''}`}>
         <a className="brand" href="#top" aria-label="Virexo Innovations - Business Website"><span className="brand-mark">V</span><span className="brand-name">{brandLetters.map((letter, index) => <span key={`${letter}-${index}`}>{letter}</span>)}</span><span className="brand-label">Innovations</span></a>
-        <nav className="section-nav" aria-label="Main navigation"><a href="#about" onClick={() => setMenuOpen(false)}>About</a><a href="#services" onClick={() => setMenuOpen(false)}>Services</a><a href="#careers" onClick={() => setMenuOpen(false)}>Careers</a><a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a></nav>
+        <nav className="section-nav" aria-label="Main navigation"><a className={activeSection === 'top' ? 'is-active' : ''} href="#top" aria-current={activeSection === 'top' ? 'page' : undefined} onClick={() => setMenuOpen(false)}>Home</a><a className={activeSection === 'services' ? 'is-active' : ''} href="#services" aria-current={activeSection === 'services' ? 'page' : undefined} onClick={() => setMenuOpen(false)}>Services</a><a className={activeSection === 'about' ? 'is-active' : ''} href="#about" aria-current={activeSection === 'about' ? 'page' : undefined} onClick={() => setMenuOpen(false)}>About</a><a className={activeSection === 'careers' ? 'is-active' : ''} href="#careers" aria-current={activeSection === 'careers' ? 'page' : undefined} onClick={() => setMenuOpen(false)}>Careers</a><a className={activeSection === 'contact' ? 'is-active' : ''} href="#contact" aria-current={activeSection === 'contact' ? 'page' : undefined} onClick={() => setMenuOpen(false)}>Contact</a></nav>
         <div className="nav-actions"><a className="nav-cta" href="#contact">Start a project <span aria-hidden="true">-&gt;</span></a><a className="client-login-link" href="/login.html">Client login</a><button className="theme-toggle" type="button" aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} aria-pressed={darkMode} onClick={() => setDarkMode((mode) => !mode)}><span aria-hidden="true">{darkMode ? '☀' : '☾'}</span></button></div>
         <button className="menu-toggle" type="button" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span /><span /></button>
       </header>
@@ -395,11 +459,12 @@ function App() {
         <section className="hero-section"><CinematicWorld /><div className="hero-copy"><p className="eyebrow"><span className="eyebrow-dot" /> Digital transformation partner / 2026</p><h1>Your vision,<br /><em>Our innovation.</em><br />Exceptional results.</h1><p className="hero-intro">Virexo Innovations transforms ambitious business ideas into powerful digital solutions. We combine strategic thinking, cutting-edge technology, and creative excellence to deliver results that matter.</p><a className="primary-button" href="#services">Explore Our Services <span aria-hidden="true">&#8599;</span></a><div className="hero-metrics"><div><strong>150+</strong><span>Clients Served</span></div><div><strong>25+</strong><span>Years Combined Experience</span></div><div><strong>98%</strong><span>Client Retention</span></div></div></div><div className="scroll-note"><span /> Scroll to explore</div></section>
         <section className="trust-strip reveal" aria-label="Virexo capabilities"><span>Strategy-led</span><i /> <span>Technology-enabled</span><i /> <span>Results-focused</span><i /> <span>Built to scale</span></section>
         <section className="statement-section reveal" id="about"><p className="section-index">01 / About Virexo Innovations</p><div><h2>Digital Excellence<br /><span>Built for Growth.</span></h2><p className="statement-copy">At Virexo Innovations, we're passionate about helping businesses succeed in the digital age. Our team of experienced strategists, designers, and technologists work collaboratively to understand your unique challenges and deliver solutions that drive measurable impact. We don't just build digital products—we build lasting partnerships.</p><a className="text-link" href="#contact">Start Your Transformation <span aria-hidden="true">&#8599;</span></a></div></section>
-        <section className="services-section reveal" id="services"><div className="section-heading"><p className="section-index">02 / Our Services</p><h2>Comprehensive Solutions<br /><em>for Modern Business.</em></h2></div><div className="service-list">{services.map((service) => <article className="service-item reveal" key={service.number} tabIndex="0"><p className="service-number">{service.number}</p><div><h3>{service.title}</h3><p>{service.description}</p><span className="service-tag">{service.tag}</span></div><span className="service-arrow" aria-hidden="true">&#8599;</span></article>)}</div></section>
+        <ServiceShowcase />
         <EnterpriseCapabilities />
         <AnalyticsDashboard />
         <Careers />
-        <section className="contact-section reveal" id="contact"><div className="contact-content"><p className="section-index">04 / Start a project</p><h2>Ready to build something<br />your customers actually <em>trust?</em></h2><p className="contact-intro">Share a few details about your project and a member of the Virexo Innovations team will reply within one business day with a clear next step.</p><div className="contact-details"><a href="mailto:virexoinnovations@gmail.com"><span>Email</span><strong>virexoinnovations@gmail.com</strong></a><a href="https://virexo.odoo.com" target="_blank" rel="noreferrer"><span>Official website</span><strong>virexo.odoo.com</strong></a><div><span>Studio hours</span><strong>Mon-Fri, 9am-6pm</strong></div></div></div>{formSubmitted ? <div className="contact-form form-success" role="status"><span className="success-icon" aria-hidden="true">&#10003;</span><h3>Message received.</h3><p>Thank you for reaching out. Our team will reply within one business day.</p><button className="text-link" type="button" onClick={() => setFormSubmitted(false)}>Send another message <span aria-hidden="true">&#8599;</span></button></div> : <form className="contact-form" onSubmit={(event) => { event.preventDefault(); setFormSubmitted(true); event.currentTarget.reset() }}><label htmlFor="name">Full name</label><input id="name" name="name" type="text" placeholder="Your full name" autoComplete="name" required /><label htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="you@company.com" autoComplete="email" required /><label htmlFor="details">Project details</label><textarea id="details" name="details" placeholder="What are you looking to build?" rows="5" required /><button className="contact-button" type="submit">Send message <span aria-hidden="true">&#8599;</span></button></form>}</section>
+        <section className="final-cta reveal" aria-labelledby="final-cta-title"><div><p className="section-index">05 / Make the next move</p><h2 id="final-cta-title">Ready to Transform<br /><em>Your Idea?</em></h2></div><a className="primary-button" href="#contact">Request Information <span aria-hidden="true">&#8599;</span></a></section>
+        <section className="contact-section reveal" id="contact"><div className="contact-content"><p className="section-index">04 / Start a project</p><h2>Ready to transform<br />your idea into <em>impact?</em></h2><p className="contact-intro">Tell us what you are building and a member of the Virexo Innovations team will reply within one business day with a clear next step.</p><div className="contact-details"><a href="mailto:virexoinnovations@gmail.com"><span>Email</span><strong>virexoinnovations@gmail.com</strong></a><a href="https://virexo.odoo.com" target="_blank" rel="noreferrer"><span>Official website</span><strong>virexo.odoo.com</strong></a><div><span>Studio hours</span><strong>Mon-Fri, 9am-6pm</strong></div></div></div><EnquiryForm /></section>
       </main>
       <footer><a className="brand" href="#top"><span className="brand-mark">V</span><span className="brand-name">{brandLetters.map((letter, index) => <span key={`${letter}-${index}`}>{letter}</span>)}</span></a><p>Digital Innovation for Ambitious Businesses</p><p>© 2026 Virexo Innovations. All rights reserved.</p><div className="social-links" aria-label="Virexo Innovations social links"><a href="https://github.com/ahmadecom6/virexo" target="_blank" rel="noreferrer" aria-label="Virexo Innovations GitHub repository" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fillRule="evenodd" d="M12 2.5a9.5 9.5 0 0 0-3 18.51c.48.09.66-.21.66-.46v-1.68c-2.69.59-3.26-1.15-3.26-1.15-.44-1.12-1.07-1.42-1.07-1.42-.88-.61.07-.6.07-.6.97.07 1.48 1 1.48 1 .86 1.47 2.27 1.05 2.82.8.09-.62.34-1.05.62-1.29-2.15-.24-4.41-1.08-4.41-4.79 0-1.06.38-1.92 1-2.6-.1-.24-.43-1.23.1-2.56 0 0 .81-.26 2.63 1a9.1 9.1 0 0 1 4.8 0c1.82-1.26 2.63-1 2.63-1 .53 1.33.2 2.32.1 2.56.62.68 1 1.54 1 2.6 0 3.72-2.27 4.55-4.43 4.78.35.3.66.9.66 1.82v2.7c0 .25.18.55.67.46A9.5 9.5 0 0 0 12 2.5Z" clipRule="evenodd" /></svg></a><a href="https://www.linkedin.com/company/virexo/" target="_blank" rel="noreferrer" aria-label="Virexo LinkedIn company page" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 7.2A1.7 1.7 0 1 1 5.2 3.8a1.7 1.7 0 0 1 0 3.4ZM3.8 20.2h2.8V9.1H3.8v11.1ZM8.5 9.1h2.7v1.5h.04c.38-.72 1.3-1.86 3.26-1.86 3.49 0 4.13 2.3 4.13 5.28v6.17h-2.8v-5.47c0-1.31-.02-3-1.83-3-1.83 0-2.11 1.43-2.11 2.91v5.56H8.5V9.1Z" /></svg></a></div></footer>
     </div>
