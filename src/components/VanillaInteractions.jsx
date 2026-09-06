@@ -444,9 +444,37 @@ function setupAiAssistant() {
   return () => { window.clearTimeout(typingTimer); trigger.remove(); panel.remove(); document.removeEventListener('keydown', keydown) }
 }
 
+function setupVexAssistant() {
+  if (document.querySelector('.vex-assistant')) return () => {}
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const root = document.createElement('div')
+  root.className = 'vex-assistant'
+  root.innerHTML = '<button class="vex-assistant__trigger" type="button" aria-label="Open Vex, your virtual guide" aria-expanded="false"><svg viewBox="0 0 80 80" role="img" aria-label="Vex virtual guide"><defs><linearGradient id="vex-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2ECC8F"/><stop offset="1" stop-color="#3B82F6"/></linearGradient></defs><rect class="vex-assistant__body" x="8" y="8" width="64" height="64" rx="25" fill="url(#vex-gradient)"/><ellipse class="vex-assistant__eye vex-assistant__eye--left" cx="31" cy="35" rx="4" ry="5" fill="#071b18"/><ellipse class="vex-assistant__eye vex-assistant__eye--right" cx="49" cy="35" rx="4" ry="5" fill="#071b18"/><path class="vex-assistant__mouth" d="M31 48 Q40 55 49 48" fill="none" stroke="#071b18" stroke-width="3" stroke-linecap="round"/></svg><span class="vex-assistant__status" aria-hidden="true"></span></button><div class="vex-assistant__bubble" hidden><button class="vex-assistant__close" type="button" aria-label="Dismiss Vex message">×</button><div class="vex-assistant__speech" aria-live="polite"></div><div class="vex-assistant__actions"></div><button class="vex-assistant__mute" type="button" aria-pressed="false">🔊 Voice on</button></div>'
+  document.body.appendChild(root)
+  const trigger = root.querySelector('.vex-assistant__trigger')
+  const bubble = root.querySelector('.vex-assistant__bubble')
+  const speech = root.querySelector('.vex-assistant__speech')
+  const actions = root.querySelector('.vex-assistant__actions')
+  const mute = root.querySelector('.vex-assistant__mute')
+  const close = root.querySelector('.vex-assistant__close')
+  let muted = window.localStorage.getItem('virexo-vex-muted') === 'true'
+  let speaking = false
+  const message = "Hi! I'm Vex, your virtual guide. Need help exploring our services?"
+  const updateMute = () => { mute.setAttribute('aria-pressed', String(muted)); mute.textContent = muted ? '🔇 Voice off' : '🔊 Voice on' }
+  const stopSpeech = () => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); speaking = false; root.classList.remove('is-speaking') }
+  const speak = (text) => { if (muted || !('speechSynthesis' in window)) return; stopSpeech(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'en-US'; utterance.rate = 1; speaking = true; root.classList.add('is-speaking'); utterance.onend = () => { speaking = false; root.classList.remove('is-speaking') }; window.speechSynthesis.speak(utterance) }
+  const showActions = () => { actions.innerHTML = '<button type="button" data-vex-action="services">Show me services</button><button type="button" data-vex-action="quote">How do I get a quote?</button><button type="button" data-vex-action="looking">Just looking, thanks!</button>'; actions.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => { const action = button.dataset.vexAction; const text = action === 'services' ? 'You can explore development, design, automation, e-commerce, API, and maintenance services.' : action === 'quote' ? 'You can request a consultation through the enquiry form. I will take you there now.' : 'No problem. I will be here whenever you need a useful next step.'; speech.textContent = text; speak(text); if (action === 'services') window.setTimeout(() => document.querySelector('.services-preview')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' }), 250); if (action === 'quote') window.setTimeout(() => document.querySelector('.contact-page')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' }), 250) })) }
+  const open = () => { if (speaking) { stopSpeech(); return } bubble.hidden = false; trigger.setAttribute('aria-expanded', 'true'); root.classList.add('is-open'); speech.textContent = message; showActions(); speak(message); close.focus() }
+  const dismiss = () => { stopSpeech(); root.classList.remove('is-open'); trigger.setAttribute('aria-expanded', 'false'); window.setTimeout(() => { bubble.hidden = true }, reducedMotion ? 0 : 220); trigger.focus() }
+  const keydown = (event) => { if (!bubble.hidden && event.key === 'Escape') dismiss() }
+  trigger.addEventListener('click', open); close.addEventListener('click', dismiss); document.addEventListener('keydown', keydown); mute.addEventListener('click', () => { muted = !muted; window.localStorage.setItem('virexo-vex-muted', String(muted)); updateMute(); if (muted) stopSpeech() })
+  updateMute()
+  return () => { stopSpeech(); trigger.removeEventListener('click', open); close.removeEventListener('click', dismiss); document.removeEventListener('keydown', keydown); root.remove() }
+}
+
 export default function VanillaInteractions() {
   useEffect(() => {
-    const cleanups = [setupLiveClock(), setupScrollProgress(), setupCounters(), setupMagneticButtons(), setupCardTilt(), setupHeroCanvas(), setupScrollReveal(), setupPersonalizedGreeting(), setupEstimateTool(), setupTitleVisibility(), setupDraftAutosave(), setupConfetti(), setupCustomCursor(), setupAccessibilityPanel(), setupPreloader(), setupProofTicker(), setupCaseStudyModal(), setupTestimonialsCarousel(), setupBackToTopRing(), setupPdfSummary(), setupCvDropzone(), setupSeoMetadata(), setupAiAssistant()]
+    const cleanups = [setupLiveClock(), setupScrollProgress(), setupCounters(), setupMagneticButtons(), setupCardTilt(), setupHeroCanvas(), setupScrollReveal(), setupPersonalizedGreeting(), setupEstimateTool(), setupTitleVisibility(), setupDraftAutosave(), setupConfetti(), setupCustomCursor(), setupAccessibilityPanel(), setupPreloader(), setupProofTicker(), setupCaseStudyModal(), setupTestimonialsCarousel(), setupBackToTopRing(), setupPdfSummary(), setupCvDropzone(), setupSeoMetadata(), setupAiAssistant(), setupVexAssistant()]
     return () => cleanups.forEach((cleanup) => cleanup())
   }, [])
   return null
