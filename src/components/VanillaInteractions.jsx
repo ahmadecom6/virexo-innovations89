@@ -291,9 +291,16 @@ function setupPreloader() {
   loader.className = 'brand-preloader'
   loader.innerHTML = '<div><span>V</span><strong>Virexo Innovations</strong><small>Building useful systems</small></div>'
   document.body.prepend(loader)
-  const hide = () => { window.setTimeout(() => loader.classList.add('is-ready'), 450); window.setTimeout(() => loader.remove(), 1200) }
+  const startedAt = performance.now()
+  let fadeTimer
+  let removeTimer
+  const hide = () => {
+    const remaining = Math.max(0, 2000 - (performance.now() - startedAt))
+    fadeTimer = window.setTimeout(() => loader.classList.add('is-ready'), remaining)
+    removeTimer = window.setTimeout(() => loader.remove(), remaining + 750)
+  }
   if (document.readyState === 'complete') hide(); else window.addEventListener('load', hide, { once: true })
-  return () => { window.removeEventListener('load', hide); loader.remove() }
+  return () => { window.removeEventListener('load', hide); window.clearTimeout(fadeTimer); window.clearTimeout(removeTimer); loader.remove() }
 }
 
 function setupProofTicker() {
