@@ -668,8 +668,17 @@ body, button, input, textarea, select { font-family: 'Manrope', var(--font-body)
 p { color: var(--cinema-muted); }
 
 .site-nav { min-height: 78px; background: rgba(13, 27, 42, 0.68); border-bottom-color: var(--cinema-border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.digital-top-banner { position: relative; z-index: 210; overflow: hidden; height: 28px; background: #071b2d; border-bottom: 1px solid rgba(46, 204, 143, 0.22); color: var(--cinema-muted); white-space: nowrap; }
+.digital-top-banner__track { display: inline-flex; align-items: center; height: 100%; gap: 48px; min-width: max-content; padding-left: 100%; animation: digitalBanner 28s linear infinite; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; }
+.digital-top-banner__track span:nth-child(3n + 1) { color: var(--cinema-mint); }
+.digital-top-banner__track span:nth-child(3n + 2) { color: #8db7ff; }
+@keyframes digitalBanner { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 .site-nav.scrolled { background: rgba(13, 27, 42, 0.9); }
-.logo span { border-color: var(--cinema-mint); color: var(--cinema-mint); box-shadow: inset 0 0 18px rgba(46, 204, 143, 0.08); }
+.logo span { position: relative; border-color: var(--cinema-mint); color: var(--cinema-mint); box-shadow: inset 0 0 18px rgba(46, 204, 143, 0.08), 0 0 0 rgba(46, 204, 143, 0); animation: logoPulse 3s ease-in-out infinite; }
+.logo span::before { position: absolute; inset: -5px; border: 1px solid rgba(46, 204, 143, 0.32); border-radius: inherit; content: ''; animation: logoHalo 3s ease-out infinite; }
+.logo span::after { position: absolute; top: 2px; left: 4px; width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.8); box-shadow: 0 0 12px #fff; content: ''; opacity: 0.7; }
+@keyframes logoPulse { 0%, 100% { transform: translateY(0); box-shadow: inset 0 0 18px rgba(46, 204, 143, 0.08), 0 0 0 rgba(46, 204, 143, 0); } 50% { transform: translateY(-2px); box-shadow: inset 0 0 22px rgba(46, 204, 143, 0.18), 0 0 22px rgba(46, 204, 143, 0.2); } }
+@keyframes logoHalo { 0%, 55% { opacity: 0.55; transform: scale(0.9); } 100% { opacity: 0; transform: scale(1.3); } }
 .logo strong { color: var(--cinema-white); }
 .nav-links a:hover, .nav-links a.active { color: var(--cinema-white); }
 .nav-links a::after { background: var(--cinema-mint); }
@@ -719,6 +728,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--cinema-mint); bo
 }
 
 @media (max-width: 640px) {
+  .digital-top-banner { height: 24px; }
+  .digital-top-banner__track { gap: 28px; animation-duration: 22s; font-size: 0.52rem; }
   .hero-page { min-height: 680px; padding-top: 5rem; }
   .hero-copy h1 { font-size: clamp(2.25rem, 12vw, 3rem); }
   .hero-page::after { right: 5%; bottom: 8%; width: 100px; height: 100px; }
@@ -784,6 +795,7 @@ html[data-theme='light'] .floating-contact { color: #071b18; }
   .live-systems-badge i { animation: none; }
   .js-reveal { opacity: 1; transform: none; transition: none; }
   .magnetic-cta { transform: none !important; }
+  .digital-top-banner__track, .logo span, .logo span::before { animation: none; }
 }
 
 .personalized-greeting { margin: 0 0 var(--space-3); color: var(--cinema-mint) !important; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }

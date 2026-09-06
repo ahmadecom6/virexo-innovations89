@@ -79,7 +79,7 @@ function GlobalTools() {
 
 function RoutedContent() {
   const location = useLocation()
-  return <><a className="skip-link" href="#main-content">Skip to main content</a><Navbar /><Breadcrumbs /><main id="main-content" tabIndex="-1"><AnimatePresence mode="wait"><PageTransition key={location.pathname + location.search}><Outlet /></PageTransition></AnimatePresence></main><Footer /><GlobalTools /><VanillaInteractions /></>
+  return <><a className="skip-link" href="#main-content">Skip to main content</a><div className="digital-top-banner" role="status"><div className="digital-top-banner__track"><span>◈ VIREXO DIGITAL SYSTEMS</span><span>BUILDING USEFUL TECHNOLOGY</span><span>DESIGN / ENGINEERING / AUTOMATION</span><span>◈ VIREXO DIGITAL SYSTEMS</span><span>BUILDING USEFUL TECHNOLOGY</span><span>DESIGN / ENGINEERING / AUTOMATION</span></div></div><Navbar /><Breadcrumbs /><main id="main-content" tabIndex="-1"><AnimatePresence mode="wait"><PageTransition key={location.pathname + location.search}><Outlet /></PageTransition></AnimatePresence></main><Footer /><GlobalTools /><VanillaInteractions /></>
 }
 
 export default function Layout() { return <ToastProvider><RoutedContent /></ToastProvider> }
