@@ -1,66 +1,34 @@
+import { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { useEffect, useState } from 'react'
 import './Login.scss'
 
 const tokenKey = 'virexo-client-portal-token'
+const emptyForm = { name: '', email: '', role: '', experience: '', score: 80, status: 'Screening', location: '', notes: '' }
+const statusOptions = ['Screening', 'Interview', 'Offer', 'Hired', 'On hold']
 
-export function Portal() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [account, setAccount] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return Boolean(window.localStorage.getItem(tokenKey))
-  })
-  const [submitting, setSubmitting] = useState(false)
-
-  useEffect(() => {
-    const token = typeof window === 'undefined' ? null : window.localStorage.getItem(tokenKey)
-    if (!token) return
-
-    fetch('/api/auth/session', { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((data) => setAccount(data))
-      .catch(() => window.localStorage.removeItem(tokenKey))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const submit = async (event) => {
-    event.preventDefault()
-    setError('')
-    setSubmitting(true)
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (response.status === 502) throw new Error('The portal service is unavailable. Please try again in a moment.')
-      if (!response.ok) throw new Error(data.error || 'Unable to sign in.')
-      window.localStorage.setItem(tokenKey, data.token)
-      setAccount({ email: data.email })
-      setPassword('')
-    } catch (requestError) {
-      setError(requestError.message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const signOut = async () => {
-    const token = window.localStorage.getItem(tokenKey)
-    await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {})
-    window.localStorage.removeItem(tokenKey)
-    setAccount(null)
-    setEmail('')
-  }
-
-  return <main className="portal-shell"><a className="portal-brand" href="/"><span>V</span>Virexo <small>Innovations</small></a><section className="portal-card">{loading ? <p className="portal-loading">Checking your secure session...</p> : account ? <div className="portal-welcome"><p className="portal-eyebrow">Client portal</p><h1>Welcome back.</h1><p>Signed in as <strong>{account.email}</strong></p><div className="portal-links"><a href="https://virexo.odoo.com" target="_blank" rel="noreferrer">Visit Virexo website <span>↗</span></a><a href="mailto:virexoinnovations@gmail.com">Contact Virexo <span>↗</span></a></div><button type="button" className="signout-button" onClick={signOut}>Sign out</button></div> : <><div className="portal-intro"><p className="portal-eyebrow">Secure client access</p><h1>Build what's next.</h1><p>Sign in to access your Virexo Innovations workspace.</p></div><form onSubmit={submit}><label htmlFor="portal-email">Email address</label><input id="portal-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" required /><label htmlFor="portal-password">Password</label><div className="password-field"><input id="portal-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" required /><button className="password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? '◉' : '◌'}</button></div>{error && <p className="portal-error" role="alert">{error}</p>}<button type="submit" disabled={submitting}>{submitting ? 'Signing in...' : 'Sign in'} <span>↗</span></button></form><p className="portal-help">Need access? <a href="mailto:virexoinnovations@gmail.com">Contact Virexo</a></p></>}</section><p className="portal-footer">Virexo Innovations · Digital transformation partner</p></main>
+function Icon({ name }) {
+  const paths = { grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', star: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L1 9.6l6.2-.9z', plus: 'M12 5v14M5 12h14', search: 'm21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0', logout: 'M10 17l5-5-5-5M15 12H3m12-7h4v14h-4' }
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]} /></svg>
 }
 
+function Login({ onAccount }) {
+  const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [show, setShow] = useState(false); const [error, setError] = useState(''); const [busy, setBusy] = useState(false)
+  const submit = async (event) => { event.preventDefault(); setBusy(true); setError(''); try { const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Unable to sign in.'); localStorage.setItem(tokenKey, data.token); onAccount(data) } catch (requestError) { setError(requestError.message) } finally { setBusy(false) } }
+  return <main className="portal-shell"><div className="login-orbit orbit-a" /><div className="login-orbit orbit-b" /><a className="portal-brand" href="/"><span>V</span> Virexo <small>Talent OS</small></a><section className="portal-card login-card"><div className="login-side"><p className="portal-eyebrow">Virexo / People intelligence</p><h1>Build the team behind what&apos;s next.</h1><p>One focused workspace for hiring decisions, candidate insights, and high-performing teams.</p><div className="login-signal"><i /><span>Secure workspace online</span></div></div><div className="login-form-wrap"><p className="portal-eyebrow">Secure access</p><h2>Welcome back</h2><p className="login-muted">Sign in to manage your candidate pipeline.</p><form onSubmit={submit}><label htmlFor="portal-email">Work email</label><input id="portal-email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required /><label htmlFor="portal-password">Password</label><div className="password-field"><input id="portal-password" type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required /><button className="password-toggle" type="button" onClick={() => setShow(!show)} aria-label="Toggle password visibility">{show ? 'Hide' : 'Show'}</button></div>{error && <p className="portal-error" role="alert">{error}</p>}<button className="login-submit" type="submit" disabled={busy}>{busy ? 'Authenticating...' : 'Enter workspace'} <span>↗</span></button></form><p className="portal-help">Need access? <a href="mailto:virexoinnovations@gmail.com">Contact Virexo</a></p></div></section><p className="portal-footer">VIREXO INNOVATIONS / INTERNAL TALENT SYSTEM</p></main>
+}
+
+function Dashboard({ account, onSignOut }) {
+  const [candidates, setCandidates] = useState([]); const [query, setQuery] = useState(''); const [filter, setFilter] = useState('All'); const [modal, setModal] = useState(false); const [selected, setSelected] = useState(null); const [form, setForm] = useState(emptyForm); const [error, setError] = useState(''); const token = localStorage.getItem(tokenKey)
+  const load = () => fetch('/api/candidates', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject()).then(setCandidates).catch(() => setError('Could not load candidates.'))
+  useEffect(() => { load() }, [])
+  const filtered = useMemo(() => candidates.filter(c => (filter === 'All' || c.status === filter) && `${c.name} ${c.role} ${c.location}`.toLowerCase().includes(query.toLowerCase())), [candidates, query, filter])
+  const top = [...candidates].sort((a, b) => b.score - a.score).slice(0, 3)
+  const save = async (event) => { event.preventDefault(); setError(''); const response = await fetch('/api/candidates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...form, score: Number(form.score) }) }); const data = await response.json().catch(() => ({})); if (!response.ok) return setError(data.error || 'Could not add candidate.'); setCandidates(current => [data, ...current]); setModal(false); setForm(emptyForm) }
+  const stats = [{ label: 'Total candidates', value: candidates.length, note: '+12% this month' }, { label: 'In interview', value: candidates.filter(c => c.status === 'Interview').length, note: 'Active pipeline' }, { label: 'Avg. match score', value: candidates.length ? `${Math.round(candidates.reduce((a, c) => a + Number(c.score), 0) / candidates.length)}%` : '0%', note: 'Across your pipeline' }, { label: 'Top performers', value: top.filter(c => c.score >= 90).length, note: '90% match or above' }]
+  return <main className="dashboard-shell"><aside className="dashboard-sidebar"><a className="dashboard-brand" href="/"><span>V</span><b>Virexo</b><small>Talent OS</small></a><div className="sidebar-label">Workspace</div><nav><a className="active" href="#overview"><Icon name="grid" />Overview</a><a href="#candidates"><Icon name="users" />Candidates <em>{candidates.length}</em></a><a href="#performers"><Icon name="star" />Top performers</a></nav><div className="sidebar-bottom"><div className="user-chip"><span>{(account.email || 'A')[0].toUpperCase()}</span><div><strong>{account.email}</strong><small>Administrator</small></div></div><button className="side-logout" onClick={onSignOut}><Icon name="logout" />Sign out</button></div></aside><section className="dashboard-main"><header className="dashboard-topbar"><div><p className="dashboard-kicker">Friday, September 12, 2026</p><h1>Good morning, team.</h1></div><div className="topbar-actions"><span className="live-pill"><i />Live workspace</span><button className="add-button" onClick={() => setModal(true)}><Icon name="plus" />Add candidate</button></div></header><div className="dashboard-content" id="overview"><section className="welcome-banner"><div><span className="banner-label">Talent overview</span><h2>Make every hire<br /><em>count.</em></h2><p>Your pipeline is moving well. Here&apos;s what needs your attention today.</p></div><div className="banner-mark">VX<span>+</span></div></section><section className="stats-grid">{stats.map(stat => <article className="stat-card" key={stat.label}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></article>)}</section><section className="dashboard-grid"><div className="candidate-panel" id="candidates"><div className="panel-heading"><div><span className="panel-kicker">Pipeline / {filtered.length} records</span><h2>Candidate pipeline</h2></div><button className="text-action" onClick={() => setModal(true)}>Add new <span>↗</span></button></div><div className="toolbar"><div className="search-field"><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search candidates..." /></div><select value={filter} onChange={e => setFilter(e.target.value)}><option>All</option>{statusOptions.map(s => <option key={s}>{s}</option>)}</select></div><div className="candidate-list">{filtered.map(candidate => <button className="candidate-row" key={candidate.id} onClick={() => setSelected(candidate)}><span className="avatar">{candidate.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span><span className="candidate-name"><strong>{candidate.name}</strong><small>{candidate.role} · {candidate.location}</small></span><span className={`status status-${candidate.status.toLowerCase().replace(' ', '-')}`}>{candidate.status}</span><span className="score"><b>{candidate.score}%</b><small>match</small></span><span className="row-arrow">→</span></button>)}{!filtered.length && <p className="empty-state">No candidates match this view.</p>}</div></div><aside className="performer-panel" id="performers"><div className="panel-heading"><div><span className="panel-kicker">Standout talent</span><h2>Top performers</h2></div><Icon name="star" /></div><div className="performer-list">{top.map((candidate, index) => <button className="performer-row" key={candidate.id} onClick={() => setSelected(candidate)}><span className="rank">0{index + 1}</span><span className="avatar small">{candidate.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span><span><strong>{candidate.name}</strong><small>{candidate.role}</small></span><b>{candidate.score}%</b></button>)}</div><div className="performer-footer">Ranked by match score <span>↗</span></div></aside></section></div></section>{(modal || selected) && <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && (setModal(false), setSelected(null))}>{modal ? <form className="candidate-modal" onSubmit={save}><div className="modal-heading"><div><span className="panel-kicker">New record</span><h2>Add candidate</h2></div><button type="button" onClick={() => setModal(false)}>×</button></div><div className="modal-fields">{[['name','Full name','text'],['email','Email address','email'],['role','Role','text'],['location','Location','text']].map(([key,label,type]) => <label key={key}>{label}<input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} required /></label>)}<label>Experience<select value={form.experience} onChange={e => setForm({ ...form, experience: e.target.value })} required><option value="">Select level</option><option>Entry level</option><option>1–3 years</option><option>4–6 years</option><option>7+ years</option></select></label><label>Stage<select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>{statusOptions.map(s => <option key={s}>{s}</option>)}</select></label><label>Match score<input type="number" min="0" max="100" value={form.score} onChange={e => setForm({ ...form, score: e.target.value })} required /></label><label>Notes<textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows="3" /></label></div>{error && <p className="portal-error">{error}</p>}<button className="login-submit" type="submit">Save candidate <span>↗</span></button></form> : <article className="candidate-modal detail-modal"><button className="modal-close" onClick={() => setSelected(null)}>×</button><span className="avatar large">{selected.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span><span className="panel-kicker">Candidate profile</span><h2>{selected.name}</h2><p className="detail-role">{selected.role} · {selected.location}</p><div className="detail-score"><strong>{selected.score}%</strong><span>match score</span></div><div className="detail-meta"><span>Status <b>{selected.status}</b></span><span>Experience <b>{selected.experience}</b></span><span>Email <b>{selected.email}</b></span></div>{selected.notes && <p className="detail-notes">{selected.notes}</p>}</article>}</div>}</main>
+}
+
+export function Portal() { const [account, setAccount] = useState(null); const [loading, setLoading] = useState(true); useEffect(() => { const token = localStorage.getItem(tokenKey); if (!token) return setLoading(false); fetch('/api/auth/session', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : Promise.reject()).then(setAccount).catch(() => localStorage.removeItem(tokenKey)).finally(() => setLoading(false)) }, []); const signOut = async () => { const token = localStorage.getItem(tokenKey); await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {}); localStorage.removeItem(tokenKey); setAccount(null) }; if (loading) return <main className="portal-shell"><p className="portal-loading">Checking your secure session...</p></main>; return account ? <Dashboard account={account} onSignOut={signOut} /> : <Login onAccount={setAccount} /> }
 export default Portal
 
-createRoot(document.getElementById('root')).render(<Portal />)
+if (document.getElementById('root')) createRoot(document.getElementById('root')).render(<Portal />)
