@@ -130,6 +130,21 @@ app.post('/api/auth/logout', (request, response) => {
   return response.status(204).end()
 })
 
+const candidatesFile = path.resolve('uploads', 'candidates.json')
+const seedCandidates = [
+  { id: 'cand-001', name: 'Amara Johnson', email: 'amara.johnson@example.com', role: 'Product Designer', experience: '4–6 years', score: 96, status: 'Interview', location: 'London, UK', notes: 'Strong systems thinking and exceptional portfolio depth.' },
+  { id: 'cand-002', name: 'Rayan Malik', email: 'rayan.malik@example.com', role: 'Full-Stack Engineer', experience: '7+ years', score: 93, status: 'Offer', location: 'Lahore, PK', notes: 'Leads complex product builds with calm execution.' },
+  { id: 'cand-003', name: 'Sofia Chen', email: 'sofia.chen@example.com', role: 'Growth Strategist', experience: '4–6 years', score: 89, status: 'Screening', location: 'Singapore', notes: 'Data-led operator with strong lifecycle instincts.' },
+  { id: 'cand-004', name: 'Daniel Okafor', email: 'daniel.okafor@example.com', role: 'Frontend Developer', experience: '1–3 years', score: 86, status: 'Interview', location: 'Lagos, NG', notes: 'Thoughtful frontend craft and strong communication.' },
+]
+const loadCandidates = () => { try { return JSON.parse(fs.readFileSync(candidatesFile, 'utf8')) } catch { fs.writeFileSync(candidatesFile, JSON.stringify(seedCandidates, null, 2)); return seedCandidates } }
+const saveCandidates = (records) => fs.writeFileSync(candidatesFile, JSON.stringify(records, null, 2))
+const requirePortalSession = (request, response) => { const token = getBearerToken(request); const session = authTokens.get(token); if (!session || session.expiresAt < Date.now()) { authTokens.delete(token); response.status(401).json({ error: 'Your session has expired.' }); return null } return session }
+const validateCandidate = (candidate) => { const required = ['name', 'email', 'role', 'experience', 'status', 'location']; if (!required.every((key) => typeof candidate[key] === 'string' && candidate[key].trim())) return 'Complete all candidate fields.'; if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(candidate.email)) return 'Enter a valid candidate email.'; if (!Number.isInteger(candidate.score) || candidate.score < 0 || candidate.score > 100) return 'Match score must be between 0 and 100.'; return '' }
+app.get('/api/candidates', (request, response) => { if (!requirePortalSession(request, response)) return; return response.json(loadCandidates()) })
+app.post('/api/candidates', (request, response) => { if (!requirePortalSession(request, response)) return; const candidate = { ...request.body, score: Number(request.body?.score), notes: typeof request.body?.notes === 'string' ? request.body.notes.trim() : '' }; const error = validateCandidate(candidate); if (error) return response.status(400).json({ error }); const record = { ...candidate, id: `cand-${crypto.randomUUID()}` }; const records = loadCandidates(); records.unshift(record); saveCandidates(records); return response.status(201).json(record) })
+app.get('/api/candidates/:id', (request, response) => { if (!requirePortalSession(request, response)) return; const candidate = loadCandidates().find((record) => record.id === request.params.id); if (!candidate) return response.status(404).json({ error: 'Candidate not found.' }); return response.json(candidate) })
+
 const resumeUpload = multer({
   storage: multer.diskStorage({
     destination: applicationsDirectory,
